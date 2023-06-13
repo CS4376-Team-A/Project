@@ -64,3 +64,9 @@ a:hover {
     flex-direction: column;
     margin-top: 5%;
 }
+
+#fileList {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.5em;
+}
