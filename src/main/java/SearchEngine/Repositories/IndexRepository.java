@@ -1,5 +1,6 @@
 package SearchEngine.Repositories;
 
+import SearchEngine.Models.Index;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -9,9 +10,9 @@ public class IndexRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public void saveIndex(String url, String title, String description, String keywords) {
+    public void saveIndex(Index index) {
         String sql = "INSERT INTO indexes (url, title, description, keywords) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, url, title, description, keywords);
+        jdbcTemplate.update(sql, index.url, index.title, index.description, index.keywords);
     }
 
     public boolean doesUrlExist(String url) {

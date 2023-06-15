@@ -1,6 +1,7 @@
 package SearchEngine.Services;
 
 import SearchEngine.Interfaces.IScraperService;
+import SearchEngine.Models.Index;
 import SearchEngine.Repositories.IndexRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -39,7 +40,8 @@ public class ScraperService implements IScraperService {
             System.out.println("Title: " + title);
             System.out.println("Description: " + description);
             System.out.println("Keywords: " + keywords);
-            indexRepository.saveIndex(url, title, description, keywords);
+            Index index = new Index(url, title, description, keywords);
+            indexRepository.saveIndex(index);
 
             Elements linksOnPage = document.select("a[href]");
 
