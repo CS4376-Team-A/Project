@@ -1,0 +1,72 @@
+* {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+    width: 100%;
+    min-height: 90vh;
+}
+
+h1 {
+    color: #040F16;
+}
+
+p {
+    color: #0094C6;
+}
+
+a {
+    text-decoration: none;
+    color: #0094C6;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #0094C6;
+}
+
+.container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-top: 5%;
+    margin-left: 5%;
+}
+
+#header {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#header-title {
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    font-size: xx-large;
+}
+
+#header-title * {
+    margin: 0;
+}
+
+#members-list {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    font-size: x-large;
+}
+
+#upload-content {
+    display: flex;
+    flex-direction: column;
+    margin-top: 5%;
+}
+
+#fileList {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.5em;
+}
