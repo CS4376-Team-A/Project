@@ -9,7 +9,8 @@ repositories {
 
 dependencies {
     testImplementation 'junit:junit:4.13.2'
-
+	implementation 'mysql:mysql-connector-java:8.0.33'
+	implementation 'org.jsoup:jsoup:1.16.1'
     implementation 'com.google.guava:guava:31.1-jre'
 }
 

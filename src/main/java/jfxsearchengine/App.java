@@ -14,12 +14,12 @@ public class App extends Application{
 	
 	@Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(this.getClass().getResource("App.fxml"));
+        Parent root = FXMLLoader.load(this.getClass().getResource("SearchScene.fxml"));
         
         Scene scene = new Scene(root);
         scene.getStylesheets().add(this.getClass().getResource("styles.css").toExternalForm());
         
-        stage.setTitle("Cyber Miner");
+        stage.setTitle("CyberMiner");
         stage.setScene(scene);
         stage.show();
     }
