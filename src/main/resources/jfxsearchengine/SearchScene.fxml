@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<GridPane fx:id="gridRoot" alignment="CENTER" prefHeight="874.0" prefWidth="1598.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jfxsearchengine.controller.SearchSceneController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="NEVER" maxWidth="25.0" minWidth="25.0" prefWidth="25.0" />
+      <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="987.0" minWidth="10.0" prefWidth="357.0" />
+      <ColumnConstraints halignment="CENTER" hgrow="NEVER" maxWidth="20.0" minWidth="20.0" prefWidth="20.0" />
+      <ColumnConstraints hgrow="SOMETIMES" maxWidth="1158.0" minWidth="10.0" prefWidth="916.0" />
+      <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="570.0" minWidth="50.0" prefWidth="115.0" />
+      <ColumnConstraints halignment="CENTER" hgrow="NEVER" maxWidth="570.0" minWidth="50.0" prefWidth="112.0" />
+      <ColumnConstraints hgrow="NEVER" maxWidth="25.0" minWidth="25.0" prefWidth="25.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints maxHeight="10.0" minHeight="10.0" prefHeight="10.0" vgrow="NEVER" />
+      <RowConstraints maxHeight="46.0" minHeight="25.0" prefHeight="29.0" vgrow="NEVER" />
+      <RowConstraints maxHeight="236.0" minHeight="25.0" prefHeight="133.0" valignment="CENTER" vgrow="NEVER" />
+      <RowConstraints maxHeight="428.0" minHeight="10.0" prefHeight="428.0" vgrow="SOMETIMES" />
+      <RowConstraints maxHeight="549.0" minHeight="10.0" prefHeight="249.99996948242188" vgrow="SOMETIMES" />
+      <RowConstraints maxHeight="25.0" minHeight="25.0" prefHeight="25.0" vgrow="NEVER" />
+   </rowConstraints>
+   <children>
+      <Label alignment="CENTER" contentDisplay="CENTER" text="CyberMiner" textOverrun="CLIP" translateY="-6.5" GridPane.columnIndex="1" GridPane.rowIndex="2">
+         <font>
+            <Font name="System Bold" size="62.0" />
+         </font>
+      </Label>
+      <TextField fx:id="searchTxtBox" onAction="#doSearch" prefHeight="40.0" promptText="Search" GridPane.columnIndex="3" GridPane.rowIndex="2">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </TextField>
+      <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#doSearch" prefHeight="40.0" prefWidth="98.0" text="Search" GridPane.columnIndex="4" GridPane.rowIndex="2">
+         <font>
+            <Font size="18.0" />
+         </font>
+      </Button>
+      <Button fx:id="indexMangeBtn" mnemonicParsing="false" onAction="#gotoManageScene" text="Manage Indexes" GridPane.columnIndex="5" GridPane.rowIndex="1">
+         <font>
+            <Font size="13.0" />
+         </font></Button>
+      <ScrollPane GridPane.columnIndex="1" GridPane.columnSpan="5" GridPane.rowIndex="3" GridPane.rowSpan="2">
+         <content>
+            <VBox fx:id="searchResArea" minHeight="500.0" minWidth="1500.0" />
+         </content>
+      </ScrollPane>
+   </children>
+</GridPane>
