@@ -28,13 +28,13 @@ public class ScraperService implements IScraperService{
             Document document = Jsoup.connect(url).get();
             String title = document.title();
             String description = extractMetaData(document, "description");
-            String keywords = extractMetaData(document, "keywords");
+            String keywords = extractMetaData(document, "keywords"); //this doesnt work lol
             System.out.println("URL: " + url);
             System.out.println("Title: " + title);
             System.out.println("Description: " + description);
-            System.out.println("Keywords: " + keywords);
-            Index index = new Index(url, title, description, keywords);
-            db.saveIndex(index);
+            //System.out.println("Keywords: " + keywords);
+            //Index index = new Index(url, title, description, null); //TODO: figure out keywords here
+            //db.saveIndex(index);
 
             Elements linksOnPage = document.select("a[href]");
 

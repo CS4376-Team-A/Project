@@ -35,7 +35,7 @@ public class SearchSceneController {
 	
 	public void doSearch() {
 		if (searchTxtBox.getText().isBlank()) return;
-		ObservableList<Index> res = DbManager.getInstance().findKeywords(searchTxtBox.getText());
+		ObservableList<Index> res = DbManager.getInstance().findByKeywords(searchTxtBox.getText().split(" "));
 		res.forEach(idx -> {
 			System.out.println(idx);
 			searchResArea.getChildren().add(new SearchResultControl(idx.getTitle(), idx.getUrl(), idx.getDescription()));
