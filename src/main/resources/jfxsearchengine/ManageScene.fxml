@@ -36,7 +36,7 @@
             <Font name="System Bold" size="62.0" />
          </font>
       </Label>
-      <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#gotoSearchScene" text="Search" GridPane.columnIndex="5" GridPane.rowIndex="1">
+      <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#gotoSearchScene" text="Log out" GridPane.columnIndex="5" GridPane.rowIndex="1">
          <font>
             <Font size="13.0" />
          </font>

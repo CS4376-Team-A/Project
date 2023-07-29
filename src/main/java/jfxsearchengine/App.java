@@ -1,9 +1,6 @@
 package jfxsearchengine;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 import jfxsearchengine.controller.SceneManager;
 
@@ -15,9 +12,9 @@ public class App extends Application{
 	@Override
     public void start(Stage stage) throws Exception {
 		SceneManager sm = SceneManager.initalize(stage);
-		sm.addFXML("Search", this.getClass().getResource("SearchScene.fxml"));
-		sm.addFXML("Manage", this.getClass().getResource("ManageScene.fxml"));
-		sm.changeScene("Search");
+		sm.addFXML(Scenes.SEARCH, this.getClass().getResource(Scenes.SEARCH.getUrl()));
+		sm.addFXML(Scenes.MANAGE, this.getClass().getResource(Scenes.MANAGE.getUrl()));
+		sm.changeScene(Scenes.SEARCH);
         stage.setTitle("CyberMiner");
         stage.show();
     }

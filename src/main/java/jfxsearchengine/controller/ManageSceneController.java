@@ -13,6 +13,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import jfxsearchengine.Scenes;
 import jfxsearchengine.db.DbManager;
 import jfxsearchengine.db.Index;
 
@@ -35,7 +36,8 @@ public class ManageSceneController implements Initializable {
 	@FXML private Button addBtn;
 	
 	public void gotoSearchScene() {
-		SceneManager.getInstance().changeScene("Search");
+		SceneManager.getInstance().logOut();
+		SceneManager.getInstance().changeScene(Scenes.SEARCH);
 	}
 
 	@Override

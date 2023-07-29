@@ -6,13 +6,18 @@ import java.util.HashMap;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.TextInputDialog;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import jfxsearchengine.Scenes;
 
 public class SceneManager {
 	
 	private static SceneManager inst; //singleton instance
 	private final Stage stage;
-	private final HashMap<String, Scene> scenes;
+	private final HashMap<Scenes, Scene> scenes;
+	private final HashMap<Scenes, Object> controllers;
+	private boolean loggedIn = false;
 	
 	public static SceneManager initalize(Stage stage) {
 		if (inst == null) {
@@ -31,21 +36,47 @@ public class SceneManager {
 	
 	private SceneManager(Stage stage) {
 		this.stage = stage;
-		scenes = new HashMap<String, Scene>();
+		scenes = new HashMap<Scenes, Scene>();
+		controllers = new HashMap<Scenes, Object>();
 	}
 	
-	public boolean addFXML(String name, URL url) {
+	public boolean addFXML(Scenes scene, URL url) {
 		try {
-			scenes.put(name, new Scene(FXMLLoader.load(url)));
+			FXMLLoader loader = new FXMLLoader(url);
+			scenes.put(scene, new Scene(loader.load()));
+			controllers.put(scene, loader.getController());
 		} catch (IOException e) {
-			System.err.println("Failed to load FXML "+name);
+			System.err.println("Failed to load FXML "+scene.getName());
 			e.printStackTrace();
 			return false;
 		}
 		return true;
 	}
 	
-	public void changeScene(String name) {
-		stage.setScene(scenes.get(name));
+	public void changeScene(Scenes scene) {
+		if (scene.equals(Scenes.MANAGE) && !loggedIn) {
+			TextInputDialog diag = new TextInputDialog();
+			diag.setTitle("Admin Login");
+			diag.setHeaderText("Enter admin password:");
+			diag.setGraphic(null);
+			diag.initModality(Modality.APPLICATION_MODAL);
+			diag.showAndWait().ifPresent(pw -> {
+				if (pw.equals("admin")) {
+					loggedIn = true;
+				} else {
+					((SearchSceneController)controllers.get(Scenes.SEARCH)).notifyIncorrectPassword();
+				}
+			});;
+			
+		}
+		if (loggedIn || !scene.equals(Scenes.MANAGE)) {
+			((SearchSceneController)controllers.get(Scenes.SEARCH)).clearIncorrectPassword();
+			stage.setScene(scenes.get(scene));
+		}
 	}
+	
+	public void logOut() {
+		loggedIn = false;
+	}
+	
 }
