@@ -51,7 +51,7 @@
          </font></Button>
       <ScrollPane GridPane.columnIndex="1" GridPane.columnSpan="5" GridPane.rowIndex="3" GridPane.rowSpan="2">
          <content>
-            <VBox fx:id="searchResArea" minHeight="500.0" minWidth="1500.0" />
+            <VBox fx:id="searchResArea" minHeight="10.0" minWidth="1000.0" />
          </content>
       </ScrollPane>
       <Label fx:id="notifLbl" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.rowIndex="1">

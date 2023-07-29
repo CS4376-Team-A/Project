@@ -1,5 +1,6 @@
 package jfxsearchengine.controller;
 
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -7,6 +8,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import jfxsearchengine.Scenes;
+import jfxsearchengine.controls.SearchResultControl;
+import jfxsearchengine.db.DbManager;
+import jfxsearchengine.db.Index;
 
 public class SearchSceneController {
 
@@ -15,11 +19,6 @@ public class SearchSceneController {
 	@FXML private Button indexMangeBtn;
 	@FXML private VBox searchResArea;
 	@FXML private Label notifLbl;
-	
-	public void doSearch() {//called when pressing search button or pressing enter in textbox
-		if (searchTxtBox.getText().isBlank()) return; //search txt is empty, do nothing
-		//TODO: query db based on search text
-	}
 	
 	public void gotoManageScene() {
 		SceneManager.getInstance().changeScene(Scenes.MANAGE);
@@ -32,5 +31,14 @@ public class SearchSceneController {
 	
 	public void clearIncorrectPassword() {
 		notifLbl.setText("");
+	}
+	
+	public void doSearch() {
+		if (searchTxtBox.getText().isBlank()) return;
+		ObservableList<Index> res = DbManager.getInstance().findKeywords(searchTxtBox.getText());
+		res.forEach(idx -> {
+			System.out.println(idx);
+			searchResArea.getChildren().add(new SearchResultControl(idx.getTitle(), idx.getUrl(), idx.getDescription()));
+		});
 	}
 }

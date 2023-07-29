@@ -38,6 +38,24 @@ public class DbManager {
 		return inst;
 	}
 
+	public ObservableList<Index> findKeywords(String keywords) {
+		ObservableList<Index> out = FXCollections.observableArrayList();
+		try {
+			Statement sql = con.createStatement();
+			ResultSet rs = sql.executeQuery("SELECT * FROM indexes WHERE FIND_IN_SET(\"" +keywords +"\",keywords) > 0");
+			while (rs.next()) {
+				while (rs.next()) {
+					out.add(new Index(rs.getInt("id"), rs.getString("url"),rs.getString("title"), rs.getString("description"),null,null));
+				}
+			}
+		}catch (SQLException e) {
+			System.err.println("Failed to select from DB");
+			e.printStackTrace();
+			return null;
+		}
+		return out;
+	}
+	
 	public boolean saveIndex(Index index) {
 		try {
 			Statement sql = con.createStatement();
