@@ -140,16 +140,13 @@ public class DbManager {
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
 			Statement sql = con.createStatement();
-			ResultSet rs = sql.executeQuery("SELECT * FROM indexes");
+			ResultSet rs = sql.executeQuery("SELECT i.id, i.url, i.title, i.description, i.created_at, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id GROUP BY i.id");
 			while (rs.next()) {
-				ArrayList<String> keywords = new ArrayList<String>();
-				int id = rs.getInt("id");
-				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT * FROM keywords WHERE id = "+id);
-				while (rs2.next()) keywords.add(rs2.getString("keyword"));
-				out.add(new Index(id, rs.getString("url"), 
+				String keywords = rs.getString("keywords");
+				out.add(new Index(rs.getInt("id"), rs.getString("url"), 
 						rs.getString("title"), rs.getString("description"), 
-						keywords.toArray(new String[0]), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(rs.getTimestamp("created_at").toLocalDateTime())));
+						keywords == null || keywords.isEmpty() ? new String[0] : keywords.split(", *"),
+						DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(rs.getTimestamp("created_at").toLocalDateTime())));
 			}
 			return out;
 		} catch (SQLException e) {
@@ -158,6 +155,8 @@ public class DbManager {
 			return null;
 		}
 	}
+	
+	
 
 	public void updateIndexTitle(int id, String title) {
 		try {

@@ -3,7 +3,6 @@ package jfxsearchengine.controller;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -71,7 +70,7 @@ public class ManageSceneController implements Initializable {
 
 			@Override
 			public String[] fromString(String string) {
-				return string.split("[, ]");
+				return string.split(", *");
 			}
 		}));
 		keyCol.setOnEditCommit(this::keyCommitEdit);
@@ -128,7 +127,7 @@ public class ManageSceneController implements Initializable {
 	public void addIndex() {
 		if (urlTxtBx.getText().isBlank() || titleTxtBx.getText().isBlank() ||  descTxtBx.getText().isBlank() ||  keyTxtBx.getText().isBlank()) return;
 		if (!keyTxtBx.getText().matches("(^$)|(^([A-Za-z0-9]+)(,\\s*[A-Za-z0-9]+)*$)")) return;
-		DbManager.getInstance().saveIndex(new Index(urlTxtBx.getText(), titleTxtBx.getText(), descTxtBx.getText(), keyTxtBx.getText().split(",")));
+		DbManager.getInstance().saveIndex(new Index(urlTxtBx.getText(), titleTxtBx.getText(), descTxtBx.getText(), keyTxtBx.getText().split(", *")));
 		urlTxtBx.setText("");
 		titleTxtBx.setText("");
 		descTxtBx.setText("");
