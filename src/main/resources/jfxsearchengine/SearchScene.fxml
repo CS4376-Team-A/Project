@@ -2,13 +2,14 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
 <GridPane fx:id="gridRoot" alignment="CENTER" prefHeight="874.0" prefWidth="1598.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jfxsearchengine.controller.SearchSceneController">
@@ -40,7 +41,7 @@
             <Font size="18.0" />
          </font>
       </TextField>
-      <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#doSearch" prefHeight="40.0" prefWidth="98.0" text="Search" GridPane.columnIndex="4" GridPane.rowIndex="2">
+      <Button fx:id="searchBtn" mnemonicParsing="false" onAction="#doSearch" prefHeight="40.0" prefWidth="98.0" text="Search" GridPane.columnIndex="5" GridPane.rowIndex="2">
          <font>
             <Font size="18.0" />
          </font>
@@ -49,15 +50,26 @@
          <font>
             <Font size="13.0" />
          </font></Button>
-      <ScrollPane GridPane.columnIndex="1" GridPane.columnSpan="5" GridPane.rowIndex="3" GridPane.rowSpan="2">
-         <content>
-            <VBox fx:id="searchResArea" minHeight="10.0" minWidth="1000.0" />
-         </content>
-      </ScrollPane>
       <Label fx:id="notifLbl" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.rowIndex="1">
          <GridPane.margin>
             <Insets right="10.0" />
          </GridPane.margin>
       </Label>
+      <TableView fx:id="searchTable" editable="true" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.columnSpan="5" GridPane.rowIndex="3" GridPane.rowSpan="2">
+         <columns>
+            <TableColumn fx:id="titleCol" prefWidth="152.0" text="Title" />
+            <TableColumn fx:id="urlCol" prefWidth="455.0" text="URL" />
+            <TableColumn fx:id="descCol" minWidth="0.0" prefWidth="381.0" text="Description" />
+            <TableColumn fx:id="keyCol" prefWidth="278.0" text="Keywords" />
+         </columns>
+         <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
+      </TableView>
+      <ComboBox fx:id="modeComboBx" prefWidth="150.0" promptText="Select Mode" visibleRowCount="3" GridPane.columnIndex="4" GridPane.rowIndex="2">
+         <GridPane.margin>
+            <Insets left="5.0" right="5.0" />
+         </GridPane.margin>
+      </ComboBox>
    </children>
 </GridPane>

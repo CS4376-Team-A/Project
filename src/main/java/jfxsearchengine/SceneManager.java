@@ -1,4 +1,4 @@
-package jfxsearchengine.controller;
+package jfxsearchengine;
 
 import java.io.IOException;
 import java.net.URL;
@@ -9,7 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import jfxsearchengine.Scenes;
+import jfxsearchengine.controller.SearchSceneController;
 
 public class SceneManager {
 	

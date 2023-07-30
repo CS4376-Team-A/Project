@@ -2,25 +2,33 @@ package jfxsearchengine.controller;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
+import jfxsearchengine.SceneManager;
 import jfxsearchengine.Scenes;
 import jfxsearchengine.db.DbManager;
 import jfxsearchengine.db.Index;
 
 public class ManageSceneController implements Initializable {
+	
+	private static final String keywordsRegex = "(^$)|(^([A-Za-z0-9]+)(,? ?\\s*[A-Za-z0-9]+)*$)";
 	
 	@FXML private Button searchBtn;
 	@FXML private TableView<Index> indexTable;
@@ -37,6 +45,7 @@ public class ManageSceneController implements Initializable {
 	@FXML private TextField descTxtBx;
 	@FXML private TextField keyTxtBx;
 	@FXML private Button addBtn;
+	@FXML private Label notifLbl;
 	
 	public void gotoSearchScene() {
 		SceneManager.getInstance().logOut();
@@ -62,7 +71,6 @@ public class ManageSceneController implements Initializable {
 		descCol.setCellFactory(TextFieldTableCell.forTableColumn());
 		descCol.setOnEditCommit(this::descCommitEdit);
 		keyCol.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<String[]>() {
-
 			@Override
 			public String toString(String[] arr) {
 				return Arrays.stream(arr).collect(Collectors.joining(", "));
@@ -70,10 +78,18 @@ public class ManageSceneController implements Initializable {
 
 			@Override
 			public String[] fromString(String string) {
-				return string.split(", *");
+				return string.replaceAll(",", " ").split(" +");
 			}
 		}));
 		keyCol.setOnEditCommit(this::keyCommitEdit);
+		keyCol.setComparator(new Comparator<String[]>() {
+			@Override
+			public int compare(String[] keywords1, String[] keywords2) {
+				String keywordsString1 = String.join(", ", keywords1);
+		        String keywordsString2 = String.join(", ", keywords2);
+		        return keywordsString1.compareTo(keywordsString2);
+			}
+		});
 		delCol.setCellValueFactory(p -> new ReadOnlyObjectWrapper<>(p.getValue()));
 		delCol.setCellFactory(p -> new TableCell<Index, Index>() {
 			private final Button delButton = new Button("Delete");
@@ -112,8 +128,10 @@ public class ManageSceneController implements Initializable {
 	}
 	
 	private void keyCommitEdit(TableColumn.CellEditEvent<Index, String[]> e) {
-		if (!Arrays.stream(e.getNewValue()).collect(Collectors.joining(", ")).matches("(^$)|(^([A-Za-z0-9]+)(,\\s*[A-Za-z0-9]+)*$)")) {
-			e.consume();//TODO: idk if this does what i want lol
+		if (!Arrays.stream(e.getNewValue()).collect(Collectors.joining(", ")).matches(keywordsRegex)) {
+			notifyError(true, "Invalid keywords format");
+			e.consume();
+			indexTable.refresh();
 			return;
 		}
 		DbManager.getInstance().updateIndexKeywords(e.getTableView().getItems().get(e.getTablePosition().getRow()).getId(), e.getNewValue());
@@ -126,12 +144,25 @@ public class ManageSceneController implements Initializable {
 	
 	public void addIndex() {
 		if (urlTxtBx.getText().isBlank() || titleTxtBx.getText().isBlank() ||  descTxtBx.getText().isBlank() ||  keyTxtBx.getText().isBlank()) return;
-		if (!keyTxtBx.getText().matches("(^$)|(^([A-Za-z0-9]+)(,\\s*[A-Za-z0-9]+)*$)")) return;
-		DbManager.getInstance().saveIndex(new Index(urlTxtBx.getText(), titleTxtBx.getText(), descTxtBx.getText(), keyTxtBx.getText().split(", *")));
+		if (!keyTxtBx.getText().matches(keywordsRegex)) {
+			notifyError(true, "Invalid keywords format");
+			return;
+		}
+		DbManager.getInstance().saveIndex(new Index(urlTxtBx.getText(), titleTxtBx.getText(), descTxtBx.getText(), keyTxtBx.getText().replaceAll(",", " ").split(" +")));
 		urlTxtBx.setText("");
 		titleTxtBx.setText("");
 		descTxtBx.setText("");
 		keyTxtBx.setText("");
+		notifyError(false, null);
 		refreshTable();
+	}
+	
+	public void notifyError(boolean show, @Nullable String msg) {
+		if (show) {
+			notifLbl.setTextFill(Color.RED);
+			notifLbl.setText(msg);
+			return;
+		}
+		notifLbl.setText("");
 	}
 }

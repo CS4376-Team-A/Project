@@ -28,7 +28,7 @@ public class ScraperService implements IScraperService{
             Document document = Jsoup.connect(url).get();
             String title = document.title();
             String description = extractMetaData(document, "description");
-            String keywords = extractMetaData(document, "keywords"); //this doesnt work lol
+            //String keywords = extractMetaData(document, "keywords"); //this doesnt work lol
             System.out.println("URL: " + url);
             System.out.println("Title: " + title);
             System.out.println("Description: " + description);

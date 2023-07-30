@@ -7,7 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -29,7 +30,7 @@ public class DbManager {
 		}
 	}
 
-	public static DbManager getInstance() { //
+	public static DbManager getInstance() {
 		if (inst == null) {
 			synchronized (DbManager.class) { // ensure thread safety
 				if (inst == null) {
@@ -43,14 +44,17 @@ public class DbManager {
 	public ObservableList<Index> findByKeywords(String[] keywords) {
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
-			PreparedStatement sql = con.prepareStatement("SELECT * FROM keywords WHERE keyword IN (?)");
-			sql.setArray(1, con.createArrayOf("VARCHAR", keywords));	
+			PreparedStatement sql = con.prepareStatement("SELECT * FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')")));
 			ResultSet rs = sql.executeQuery();
 			while (rs.next()) {
 				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT * FROM indexes WHERE id = " + rs.getInt("id"));
+				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
 				while (rs2.next()) {
-					out.add(new Index(rs2.getInt("id"), rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), null, null));	
+					String k = rs2.getString("keywords");
+					int id = rs2.getInt("id");
+					if (!out.contains(Index.ofId(id))) {
+						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
+					}
 				}
 			}
 		}catch (SQLException e) {
@@ -64,14 +68,17 @@ public class DbManager {
 	public ObservableList<Index> findByAllKeywords(String[] keywords) {
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
-			PreparedStatement sql = con.prepareStatement("SELECT id FROM keywords WHERE keyword IN (?) GROUP BY id HAVING COUNT(DISTINCT keyword) = "+keywords.length);
-			sql.setArray(1, con.createArrayOf("VARCHAR", keywords));
-			ResultSet rs = sql.executeQuery();
+			Statement sql = con.createStatement();
+			ResultSet rs = sql.executeQuery("SELECT id FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+" GROUP BY id HAVING COUNT(DISTINCT keyword) = "+keywords.length);
 			while (rs.next()) {
 				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT * FROM indexes WHERE id = " + rs.getInt("id"));
+				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
 				while (rs2.next()) {
-					out.add(new Index(rs2.getInt("id"), rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), null, null));	
+					String k = rs2.getString("keywords");
+					int id = rs2.getInt("id");
+					if (!out.contains(Index.ofId(id))) {
+						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
+					}
 				}
 			}
 		}catch (SQLException e) {
@@ -85,14 +92,17 @@ public class DbManager {
 	public ObservableList<Index> findByNotKeywords(String[] keywords) {
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
-			PreparedStatement sql = con.prepareStatement("SELECT * FROM keywords WHERE keyword NOT IN (?)");
-			sql.setArray(1, con.createArrayOf("VARCHAR", keywords));	
-			ResultSet rs = sql.executeQuery();
+			Statement sql = con.createStatement();	
+			ResultSet rs = sql.executeQuery("SELECT id FROM keywords WHERE id NOT IN (SELECT id FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+") GROUP BY id");
 			while (rs.next()) {
 				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT * FROM indexes WHERE id = " + rs.getInt("id"));
+				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
 				while (rs2.next()) {
-					out.add(new Index(rs2.getInt("id"), rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), null, null));	
+					String k = rs2.getString("keywords");
+					int id = rs2.getInt("id");
+					if (!out.contains(Index.ofId(id))) {
+						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
+					}
 				}
 			}
 		}catch (SQLException e) {

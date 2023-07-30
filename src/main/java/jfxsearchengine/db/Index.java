@@ -5,7 +5,6 @@ public class Index {
 	private String title;
     private String description;
     private String[] keywords;
-    private String keywords_;
     private String dateCreated;
     private int id;
 
@@ -15,14 +14,7 @@ public class Index {
         this.description = description;
         this.keywords = keywords;
     }
-    
-    public Index(String url, String title, String description, String keywords) {
-        this.url = url;
-        this.title = title;
-        this.description = description;
-        this.keywords_ = keywords;
-    }
-    
+   
     public Index(int id, String url, String title, String description, String[] keywords, String date) {
         this.id = id;
     	this.url = url;
@@ -32,6 +24,9 @@ public class Index {
         this.dateCreated = date;
     }
     
+    private Index(int id) { //used for comparisons only
+    	this.id = id;
+    }
 	public String getUrl() {
 		return url;
 	}
@@ -83,4 +78,15 @@ public class Index {
     public String toString() {
     	return "(\'"+this.url+"\', \'"+this.title+"\', \'"+this.description+"\')";
     }
+    
+	@Override
+	public boolean equals(Object o) {// since this is populated by the db and the db id is guaranteed unique we only need to check the id
+		if (this == o) return true;
+		if (o == null || this.getClass() != o.getClass()) return false;
+        return ((Index)o).getId() == this.getId();
+	}
+	
+	public static Index ofId(int id) {
+		return new Index(id);
+	}
 }
