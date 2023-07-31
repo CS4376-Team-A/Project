@@ -7,8 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -43,21 +43,44 @@ public class DbManager {
 
 	public ObservableList<Index> findByKeywords(String[] keywords) {
 		ObservableList<Index> out = FXCollections.observableArrayList();
+
+		if (keywords == null || keywords.length == 0) {
+			return out;
+		}
+
 		try {
-			PreparedStatement sql = con.prepareStatement("SELECT * FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')")));
-			ResultSet rs = sql.executeQuery();
-			while (rs.next()) {
-				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
-				while (rs2.next()) {
-					String k = rs2.getString("keywords");
-					int id = rs2.getInt("id");
-					if (!out.contains(Index.ofId(id))) {
-						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
-					}
-				}
+			// Prepare the SQL query with placeholders for the keywords
+			String placeholders = String.join(",", Collections.nCopies(keywords.length, "?"));
+			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords " +
+							"FROM indexes i " +
+							"LEFT JOIN keywords k ON i.id = k.id " +
+							"WHERE k.keyword IN (" + placeholders + ") " +
+							"GROUP BY i.id";
+
+			// Create and set up the PreparedStatement
+			PreparedStatement sql = con.prepareStatement(sqlQuery);
+			for (int i = 0; i < keywords.length; i++) {
+				sql.setString(i + 1, keywords[i]);
 			}
-		}catch (SQLException e) {
+
+			// Execute the query
+			ResultSet rs = sql.executeQuery();
+
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String url = rs.getString("url");
+				String title = rs.getString("title");
+				String description = rs.getString("description");
+				String keywordString = rs.getString("keywords");
+				String[] keywordsArray = (keywordString == null || keywordString.isEmpty())
+						? new String[0]
+						: keywordString.split(", *");
+
+				// Create the Index object and add it to the output list
+				Index index = new Index(id, url, title, description, keywordsArray, null);
+				out.add(index);
+			}
+		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
 			e.printStackTrace();
 			return null;
@@ -67,21 +90,47 @@ public class DbManager {
 	
 	public ObservableList<Index> findByAllKeywords(String[] keywords) {
 		ObservableList<Index> out = FXCollections.observableArrayList();
+
+		if (keywords == null || keywords.length == 0) {
+			return out;
+		}
+
 		try {
-			Statement sql = con.createStatement();
-			ResultSet rs = sql.executeQuery("SELECT id FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+" GROUP BY id HAVING COUNT(DISTINCT keyword) = "+keywords.length);
-			while (rs.next()) {
-				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
-				while (rs2.next()) {
-					String k = rs2.getString("keywords");
-					int id = rs2.getInt("id");
-					if (!out.contains(Index.ofId(id))) {
-						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
-					}
-				}
+			// Prepare the SQL query with placeholders for the keywords
+			String placeholders = String.join(",", Collections.nCopies(keywords.length, "?"));
+			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords " +
+							"FROM indexes i " +
+							"LEFT JOIN keywords k ON i.id = k.id " +
+							"WHERE k.keyword IN (" + placeholders + ") " +
+							"GROUP BY i.id " +
+							"HAVING COUNT(DISTINCT k.keyword) = ?";
+
+			// Create and set up the PreparedStatement
+			PreparedStatement sql = con.prepareStatement(sqlQuery);
+			int parameterIndex = 1;
+			for (String keyword : keywords) {
+				sql.setString(parameterIndex++, keyword);
 			}
-		}catch (SQLException e) {
+			sql.setInt(parameterIndex, keywords.length);
+
+			// Execute the query
+			ResultSet rs = sql.executeQuery();
+
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String url = rs.getString("url");
+				String title = rs.getString("title");
+				String description = rs.getString("description");
+				String keywordString = rs.getString("keywords");
+				String[] keywordsArray = (keywordString == null || keywordString.isEmpty())
+						? new String[0]
+						: keywordString.split(", *");
+
+				// Create the Index object and add it to the output list
+				Index index = new Index(id, url, title, description, keywordsArray, null);
+				out.add(index);
+			}
+		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
 			e.printStackTrace();
 			return null;
@@ -91,6 +140,12 @@ public class DbManager {
 	
 	public ObservableList<Index> findByNotKeywords(String[] keywords) {
 		ObservableList<Index> out = FXCollections.observableArrayList();
+
+		if (keywords == null || keywords.length == 0) {
+			return out;
+		}
+
+		
 		try {
 			Statement sql = con.createStatement();	
 			ResultSet rs = sql.executeQuery("SELECT id FROM keywords WHERE id NOT IN (SELECT id FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+") GROUP BY id");
