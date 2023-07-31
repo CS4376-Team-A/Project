@@ -8,10 +8,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import jfxsearchengine.App;
 
 public class DbManager {
 
@@ -20,6 +22,8 @@ public class DbManager {
 	private static final String PASS = "cyberminer";
 	private static DbManager inst; // singleton instance
 	private Connection con;
+	private static final String indexesTable = App.DEBUG ? "indexes_test" : "indexes";
+	private static final String keywordsTable = App.DEBUG ? "keywords_test" : "keywords";
 
 	private DbManager() {
 		try {
@@ -42,22 +46,28 @@ public class DbManager {
 	}
 
 	public ObservableList<Index> findByKeywords(String[] keywords) {
+		if (keywords == null || keywords.length == 0) return null;
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
-			PreparedStatement sql = con.prepareStatement("SELECT * FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')")));
-			ResultSet rs = sql.executeQuery();
-			while (rs.next()) {
-				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
-				while (rs2.next()) {
-					String k = rs2.getString("keywords");
-					int id = rs2.getInt("id");
-					if (!out.contains(Index.ofId(id))) {
-						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
-					}
-				}
+			// Prepare the SQL query with placeholders for the keywords
+			String placeholders = String.join(" OR ", Collections.nCopies(keywords.length, "keyword LIKE ?"));
+			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords " +
+							"FROM "+indexesTable+" i " +
+							"LEFT JOIN "+keywordsTable+" k ON i.id = k.id " +
+							"WHERE " + placeholders + " GROUP BY i.id";
+			// Create and set up the PreparedStatement
+			PreparedStatement sql = con.prepareStatement(sqlQuery);
+			int parameterIndex = 1;
+			for (String keyword : keywords) {
+				sql.setString(parameterIndex++, "%" + keyword + "%");
 			}
-		}catch (SQLException e) {
+			ResultSet rs = sql.executeQuery(); // Execute the query
+			while (rs.next()) {
+				String keywordString = rs.getString("keywords");
+				String[] keywordsArray = (keywordString == null || keywordString.isEmpty()) ? new String[0] : keywordString.split(", *");
+				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description"), keywordsArray, null));
+			}
+		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
 			e.printStackTrace();
 			return null;
@@ -66,22 +76,27 @@ public class DbManager {
 	}
 	
 	public ObservableList<Index> findByAllKeywords(String[] keywords) {
+		if (keywords == null || keywords.length == 0) return null;
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
-			Statement sql = con.createStatement();
-			ResultSet rs = sql.executeQuery("SELECT id FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+" GROUP BY id HAVING COUNT(DISTINCT keyword) = "+keywords.length);
-			while (rs.next()) {
-				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
-				while (rs2.next()) {
-					String k = rs2.getString("keywords");
-					int id = rs2.getInt("id");
-					if (!out.contains(Index.ofId(id))) {
-						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
-					}
-				}
+			// Build the sql query
+			String likeStatements = "";
+			String andStatements = "";
+			for (int i=0;i<keywords.length;i++) {
+				likeStatements += "keyword LIKE \'"+keywords[i]+"\'";
+				if (i < keywords.length-1) likeStatements += " OR ";
+				andStatements += " AND (SELECT COUNT(DISTINCT CASE WHEN keyword LIKE \'"+keywords[i]+"\' THEN keyword END) > 0 FROM "+keywordsTable+" k WHERE i.id = k.id)";
 			}
-		}catch (SQLException e) {
+			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, (SELECT GROUP_CONCAT(k.keyword) FROM "+keywordsTable+" k WHERE i.id = k.id) AS keywords "
+					+ "FROM "+indexesTable+" i WHERE i.id IN (SELECT DISTINCT id FROM "+keywordsTable+" WHERE "+likeStatements+")" + andStatements;
+			Statement sql = con.createStatement(); // Create the Statement
+			ResultSet rs = sql.executeQuery(sqlQuery); // Execute the query
+			while (rs.next()) {
+				String keywordString = rs.getString("keywords");
+				String[] keywordsArray = (keywordString == null || keywordString.isEmpty()) ? new String[0] : keywordString.split(", *");
+				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description"), keywordsArray, null));
+			}
+		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
 			e.printStackTrace();
 			return null;
@@ -90,13 +105,14 @@ public class DbManager {
 	}
 	
 	public ObservableList<Index> findByNotKeywords(String[] keywords) {
+		if (keywords == null || keywords.length == 0) return null;
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
 			Statement sql = con.createStatement();	
-			ResultSet rs = sql.executeQuery("SELECT id FROM keywords WHERE id NOT IN (SELECT id FROM keywords WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+") GROUP BY id");
+			ResultSet rs = sql.executeQuery("SELECT id FROM "+keywordsTable+" WHERE id NOT IN (SELECT id FROM "+keywordsTable+" WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+") GROUP BY id");
 			while (rs.next()) {
 				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
+				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywrods FROM "+indexesTable+" i LEFT JOIN "+keywordsTable+" k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
 				while (rs2.next()) {
 					String k = rs2.getString("keywords");
 					int id = rs2.getInt("id");
@@ -115,13 +131,13 @@ public class DbManager {
 	
 	public boolean saveIndex(Index index) {
 		try {
-			PreparedStatement sql = con.prepareStatement("INSERT INTO indexes (url, title, description) VALUES " + index.toString(), Statement.RETURN_GENERATED_KEYS);
+			PreparedStatement sql = con.prepareStatement("INSERT INTO "+indexesTable+" (url, title, description) VALUES " + index.toString(), Statement.RETURN_GENERATED_KEYS);
 			sql.executeUpdate();
 			ResultSet rskey = sql.getGeneratedKeys();
 			if (rskey.next()) {
 				int id = rskey.getInt(1);
 				for (String k : index.getKeywords()) {
-					con.createStatement().executeUpdate("INSERT INTO keywords (id, keyword) VALUES ("+id+",\'"+k+"\')");
+					con.createStatement().executeUpdate("INSERT INTO "+keywordsTable+" (id, keyword) VALUES ("+id+",\'"+k+"\')");
 				}
 			} else {
 				throw new SQLException("Failed to get autogen ID");
@@ -137,7 +153,7 @@ public class DbManager {
 	public boolean doesUrlExist(String url) {
 		try {
 			Statement sql = con.createStatement();
-			ResultSet rs = sql.executeQuery("SELECT COUNT(*) FROM indexes WHERE url = \'"+url+"\'");
+			ResultSet rs = sql.executeQuery("SELECT COUNT(*) FROM "+indexesTable+" WHERE url = \'"+url+"\'");
 			return rs.next();
 		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
@@ -150,7 +166,7 @@ public class DbManager {
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
 			Statement sql = con.createStatement();
-			ResultSet rs = sql.executeQuery("SELECT i.id, i.url, i.title, i.description, i.created_at, GROUP_CONCAT(k.keyword) AS keywords FROM indexes i LEFT JOIN keywords k ON i.id = k.id GROUP BY i.id");
+			ResultSet rs = sql.executeQuery("SELECT i.id, i.url, i.title, i.description, i.created_at, GROUP_CONCAT(k.keyword) AS keywords FROM "+indexesTable+" i LEFT JOIN "+keywordsTable+" k ON i.id = k.id GROUP BY i.id");
 			while (rs.next()) {
 				String keywords = rs.getString("keywords");
 				out.add(new Index(rs.getInt("id"), rs.getString("url"), 
@@ -171,7 +187,7 @@ public class DbManager {
 	public void updateIndexTitle(int id, String title) {
 		try {
 			Statement sql = con.createStatement();
-			sql.executeUpdate("UPDATE indexes SET title = \'"+title+"\' WHERE id = "+id);
+			sql.executeUpdate("UPDATE "+indexesTable+" SET title = \'"+title+"\' WHERE id = "+id);
 		} catch (SQLException e) {
 			System.err.println("Failed to update title of ID "+id);
 			e.printStackTrace();
@@ -181,7 +197,7 @@ public class DbManager {
 	public void updateIndexUrl(int id, String url) {
 		try {
 			Statement sql = con.createStatement();
-			sql.executeUpdate("UPDATE indexes SET url = \'"+url+"\' WHERE id = "+id);
+			sql.executeUpdate("UPDATE"+indexesTable+"SET url = \'"+url+"\' WHERE id = "+id);
 		} catch (SQLException e) {
 			System.err.println("Failed to update url of ID "+id);
 			e.printStackTrace();
@@ -191,7 +207,7 @@ public class DbManager {
 	public void updateIndexDescription(int id, String desc) {
 		try {
 			Statement sql = con.createStatement();
-			sql.executeUpdate("UPDATE indexes SET description = \'"+desc+"\' WHERE id = "+id);
+			sql.executeUpdate("UPDATE "+indexesTable+" SET description = \'"+desc+"\' WHERE id = "+id);
 		} catch (SQLException e) {
 			System.err.println("Failed to update description of ID "+id);
 			e.printStackTrace();
@@ -201,10 +217,10 @@ public class DbManager {
 	public void updateIndexKeywords(int id, String[] keywords) {
 		try {
 			Statement sql = con.createStatement();
-			sql.executeUpdate("DELETE FROM keywords WHERE id = "+id);
+			sql.executeUpdate("DELETE FROM "+keywordsTable+" WHERE id = "+id);
 			for (String s : keywords) {
 				sql = con.createStatement();
-				sql.executeUpdate("INSERT INTO keywords (id, keyword) VALUES ("+id+",\'"+s+"\')");
+				sql.executeUpdate("INSERT INTO "+keywordsTable+" (id, keyword) VALUES ("+id+",\'"+s+"\')");
 			}
 		} catch (SQLException e) {
 			System.err.println("Failed to update keywords of ID "+id);
@@ -215,19 +231,22 @@ public class DbManager {
 	public void deleteIndex(int id) {
 		try {
 			Statement sql = con.createStatement();
-			sql.executeUpdate("DELETE FROM indexes WHERE id = "+id);
+			sql.executeUpdate("DELETE FROM "+indexesTable+" WHERE id = "+id);
 			sql = con.createStatement();
-			sql.executeUpdate("DELETE FROM keywords WHERE id = "+id);
+			sql.executeUpdate("DELETE FROM "+keywordsTable+" WHERE id = "+id);
 		} catch (SQLException e) {
 			System.err.println("Failed to delete index of ID "+id);
 			e.printStackTrace();
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	public void tryAutoFillKeywords() {
+		if (true) return; //dont want this function to run accidentally
+		
 		try {
 			Statement sql = con.createStatement();
-			ResultSet rs = sql.executeQuery("SELECT id, title, description FROM indexes");
+			ResultSet rs = sql.executeQuery("SELECT id, title, description FROM "+indexesTable);
 			while (rs.next()) {
 				String title = rs.getString("title");
 				String desc = rs.getString("description");
@@ -235,7 +254,7 @@ public class DbManager {
 				System.out.println(id);
 				for (String s : ((title==null||title.isBlank()?"":title) + (desc==null||desc.isBlank()?"":desc)).replaceAll("[^a-zA-Z0-9 ]", "").split(" +")) {
 					Statement sql2 = con.createStatement();
-					sql2.executeUpdate("INSERT INTO keywords (id, keyword) VALUES ("+id+",\'"+s+"\')");
+					sql2.executeUpdate("INSERT INTO "+keywordsTable+" (id, keyword) VALUES ("+id+",\'"+s+"\')");
 				}
 			}
 		} catch (SQLException e) {
