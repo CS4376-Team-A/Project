@@ -3,10 +3,7 @@ package jfxsearchengine.controller;
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -22,7 +19,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.paint.Color;
-import javafx.util.StringConverter;
 import jfxsearchengine.SceneManager;
 import jfxsearchengine.Scenes;
 import jfxsearchengine.db.DbManager;
@@ -38,7 +34,6 @@ public class SearchSceneController implements Initializable{
 	@FXML private TableColumn<Index, String> titleCol;
 	@FXML private TableColumn<Index, String> urlCol;
 	@FXML private TableColumn<Index, String> descCol;
-	@FXML private TableColumn<Index, String[]> keyCol;
 	@FXML private ComboBox<String> modeComboBx;
 	
 	@Override
@@ -47,30 +42,9 @@ public class SearchSceneController implements Initializable{
 		titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
 		urlCol.setCellValueFactory(new PropertyValueFactory<>("url"));
 		descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-		keyCol.setCellValueFactory(new PropertyValueFactory<>("keywords"));
-		
 		titleCol.setCellFactory(TextFieldTableCell.forTableColumn());
 		urlCol.setCellFactory(cell -> new HyperlinkTableCell());
 		descCol.setCellFactory(TextFieldTableCell.forTableColumn());
-		keyCol.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<String[]>() {
-			@Override
-			public String toString(String[] arr) {
-				return Arrays.stream(arr).collect(Collectors.joining(", "));
-			}
-
-			@Override
-			public String[] fromString(String string) {
-				return string.replaceAll(",", " ").split(" +");
-			}
-		}));
-		keyCol.setComparator(new Comparator<String[]>() {
-			@Override
-			public int compare(String[] keywords1, String[] keywords2) {
-				String keywordsString1 = String.join(", ", keywords1);
-		        String keywordsString2 = String.join(", ", keywords2);
-		        return keywordsString1.compareTo(keywordsString2);
-			}
-		});
 		
 		modeComboBx.getItems().addAll("OR","AND","NOT");
 		modeComboBx.setValue("OR");

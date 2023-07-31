@@ -4,7 +4,7 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 public class App extends Application{
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	
     public static void main(String[] args) {
         launch(args);

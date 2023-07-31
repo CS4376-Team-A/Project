@@ -20,10 +20,10 @@ public class DbManager {
 	private static final String URL = "jdbc:mysql://server.sarcly.xyz:3306/searchengine";
 	private static final String USER = "cyberminer";
 	private static final String PASS = "cyberminer";
-	private static DbManager inst; // singleton instance
-	private Connection con;
 	private static final String indexesTable = App.DEBUG ? "indexes_test" : "indexes";
 	private static final String keywordsTable = App.DEBUG ? "keywords_test" : "keywords";
+	private static DbManager inst; // singleton instance
+	private Connection con;
 
 	private DbManager() {
 		try {
@@ -59,7 +59,7 @@ public class DbManager {
 			PreparedStatement sql = con.prepareStatement(sqlQuery);
 			int parameterIndex = 1;
 			for (String keyword : keywords) {
-				sql.setString(parameterIndex++, "%" + keyword + "%");
+				sql.setString(parameterIndex++, keyword);
 			}
 			ResultSet rs = sql.executeQuery(); // Execute the query
 			while (rs.next()) {
@@ -81,17 +81,22 @@ public class DbManager {
 		try {
 			// Build the sql query
 			String likeStatements = "";
-			String andStatements = "";
+			String havingStatements = "";
 			for (int i=0;i<keywords.length;i++) {
-				likeStatements += "keyword LIKE \'"+keywords[i]+"\'";
-				if (i < keywords.length-1) likeStatements += " OR ";
-				andStatements += " AND (SELECT COUNT(DISTINCT CASE WHEN keyword LIKE \'"+keywords[i]+"\' THEN keyword END) > 0 FROM "+keywordsTable+" k WHERE i.id = k.id)";
+				likeStatements += "k.keyword LIKE \'"+keywords[i]+"\'";
+				havingStatements += "SUM(k.keyword LIKE \'"+keywords[i]+"\') > 0";
+				if (i < keywords.length-1) {
+					likeStatements += " OR ";
+					havingStatements += " AND ";
+				}
 			}
-			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, (SELECT GROUP_CONCAT(k.keyword) FROM "+keywordsTable+" k WHERE i.id = k.id) AS keywords "
-					+ "FROM "+indexesTable+" i WHERE i.id IN (SELECT DISTINCT id FROM "+keywordsTable+" WHERE "+likeStatements+")" + andStatements;
-			Statement sql = con.createStatement(); // Create the Statement
-			ResultSet rs = sql.executeQuery(sqlQuery); // Execute the query
+			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords "
+					+ "FROM "+indexesTable+" i LEFT JOIN keywords k ON i.id = k.id WHERE ("+likeStatements+") GROUP BY i.id HAVING "+havingStatements; 
+			System.out.println(sqlQuery);
+			PreparedStatement sql = con.prepareStatement(sqlQuery); // Create the Statement
+			ResultSet rs = sql.executeQuery(); // Execute the query
 			while (rs.next()) {
+				System.out.println(rs.getInt("id"));
 				String keywordString = rs.getString("keywords");
 				String[] keywordsArray = (keywordString == null || keywordString.isEmpty()) ? new String[0] : keywordString.split(", *");
 				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description"), keywordsArray, null));
