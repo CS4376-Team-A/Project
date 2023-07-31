@@ -8,13 +8,6 @@ public class Index {
     private String dateCreated;
     private int id;
 
-    public Index(String url, String title, String description, String[] keywords) {
-        this.url = url;
-        this.title = title;
-        this.description = description;
-        this.keywords = keywords;
-    }
-   
     public Index(int id, String url, String title, String description, String[] keywords, String date) {
         this.id = id;
     	this.url = url;
@@ -22,6 +15,14 @@ public class Index {
         this.description = description;
         this.keywords = keywords;
         this.dateCreated = date;
+    }
+    
+    public Index(String url, String title, String description, String[] keywords) {
+        this(-1,url,title,description,keywords, null);
+    }
+    
+    public Index(int id, String url, String title, String description) {
+    	this(id,url,title,description,null,null);
     }
     
     private Index(int id) { //used for comparisons only

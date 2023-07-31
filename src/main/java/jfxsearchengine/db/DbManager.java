@@ -7,9 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -63,9 +61,7 @@ public class DbManager {
 			}
 			ResultSet rs = sql.executeQuery(); // Execute the query
 			while (rs.next()) {
-				String keywordString = rs.getString("keywords");
-				String[] keywordsArray = (keywordString == null || keywordString.isEmpty()) ? new String[0] : keywordString.split(", *");
-				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description"), keywordsArray, null));
+				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description")));
 			}
 		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
@@ -91,15 +87,11 @@ public class DbManager {
 				}
 			}
 			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords "
-					+ "FROM "+indexesTable+" i LEFT JOIN keywords k ON i.id = k.id WHERE ("+likeStatements+") GROUP BY i.id HAVING "+havingStatements; 
+					+ "FROM "+indexesTable+" i LEFT JOIN "+keywordsTable+" k ON i.id = k.id WHERE ("+likeStatements+") GROUP BY i.id HAVING "+havingStatements;
 			System.out.println(sqlQuery);
-			PreparedStatement sql = con.prepareStatement(sqlQuery); // Create the Statement
-			ResultSet rs = sql.executeQuery(); // Execute the query
+			ResultSet rs = con.createStatement().executeQuery(sqlQuery); //Create and Execute the query
 			while (rs.next()) {
-				System.out.println(rs.getInt("id"));
-				String keywordString = rs.getString("keywords");
-				String[] keywordsArray = (keywordString == null || keywordString.isEmpty()) ? new String[0] : keywordString.split(", *");
-				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description"), keywordsArray, null));
+				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description")));
 			}
 		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
@@ -113,20 +105,24 @@ public class DbManager {
 		if (keywords == null || keywords.length == 0) return null;
 		ObservableList<Index> out = FXCollections.observableArrayList();
 		try {
-			Statement sql = con.createStatement();	
-			ResultSet rs = sql.executeQuery("SELECT id FROM "+keywordsTable+" WHERE id NOT IN (SELECT id FROM "+keywordsTable+" WHERE keyword IN "+Arrays.stream(keywords).collect(Collectors.joining("\',\'", "(\'", "\')"))+") GROUP BY id");
-			while (rs.next()) {
-				Statement sql2 = con.createStatement();
-				ResultSet rs2 = sql2.executeQuery("SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywrods FROM "+indexesTable+" i LEFT JOIN "+keywordsTable+" k ON i.id = k.id WHERE i.id = "+rs.getInt("id")+" GROUP BY i.id");
-				while (rs2.next()) {
-					String k = rs2.getString("keywords");
-					int id = rs2.getInt("id");
-					if (!out.contains(Index.ofId(id))) {
-						out.add(new Index(id, rs2.getString("url"), rs2.getString("title"), rs2.getString("description"), k == null || k.isEmpty() ? new String[0] : k.split(", *"), null));
-					}
+			// Build the sql query
+			String likeStatements = "";
+			String havingStatements = "";
+			for (int i=0;i<keywords.length;i++) {
+				likeStatements += "k.keyword NOT LIKE \'"+keywords[i]+"\'";
+				havingStatements += "SUM(k.keyword LIKE \'"+keywords[i]+"\') = 0";
+				if (i < keywords.length-1) {
+					likeStatements += " OR ";
+					havingStatements += " AND ";
 				}
 			}
-		}catch (SQLException e) {
+			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords "
+					+ "FROM "+indexesTable+" i LEFT JOIN "+keywordsTable+" k ON i.id = k.id WHERE ("+likeStatements+") GROUP BY i.id HAVING "+havingStatements;
+			ResultSet rs = con.createStatement().executeQuery(sqlQuery); //Create and Execute the query
+			while (rs.next()) {
+				out.add(new Index(rs.getInt("id"), rs.getString("url"), rs.getString("title"), rs.getString("description")));
+			}
+		} catch (SQLException e) {
 			System.err.println("Failed to select from DB");
 			e.printStackTrace();
 			return null;
