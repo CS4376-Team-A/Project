@@ -50,17 +50,18 @@ public class DbManager {
 
 		try {
 			// Prepare the SQL query with placeholders for the keywords
-			String placeholders = String.join(",", Collections.nCopies(keywords.length, "?"));
+			String placeholders = String.join(" OR ", Collections.nCopies(keywords.length, "keyword LIKE ?"));
 			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords " +
 							"FROM indexes i " +
 							"LEFT JOIN keywords k ON i.id = k.id " +
-							"WHERE k.keyword IN (" + placeholders + ") " +
+							"WHERE " + placeholders + " " +
 							"GROUP BY i.id";
 
 			// Create and set up the PreparedStatement
 			PreparedStatement sql = con.prepareStatement(sqlQuery);
-			for (int i = 0; i < keywords.length; i++) {
-				sql.setString(i + 1, keywords[i]);
+			int parameterIndex = 1;
+			for (String keyword : keywords) {
+				sql.setString(parameterIndex++, "%" + keyword + "%");
 			}
 
 			// Execute the query
@@ -97,11 +98,11 @@ public class DbManager {
 
 		try {
 			// Prepare the SQL query with placeholders for the keywords
-			String placeholders = String.join(",", Collections.nCopies(keywords.length, "?"));
+			String placeholders = String.join(" AND ", Collections.nCopies(keywords.length, "keyword LIKE ?"));
 			String sqlQuery = "SELECT i.id, i.url, i.title, i.description, GROUP_CONCAT(k.keyword) AS keywords " +
 							"FROM indexes i " +
 							"LEFT JOIN keywords k ON i.id = k.id " +
-							"WHERE k.keyword IN (" + placeholders + ") " +
+							"WHERE " + placeholders + " " +
 							"GROUP BY i.id " +
 							"HAVING COUNT(DISTINCT k.keyword) = ?";
 
@@ -109,7 +110,7 @@ public class DbManager {
 			PreparedStatement sql = con.prepareStatement(sqlQuery);
 			int parameterIndex = 1;
 			for (String keyword : keywords) {
-				sql.setString(parameterIndex++, keyword);
+				sql.setString(parameterIndex++, "%" + keyword + "%");
 			}
 			sql.setInt(parameterIndex, keywords.length);
 
