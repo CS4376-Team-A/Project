@@ -241,6 +241,20 @@ public class DbManager {
 		}
 	}
 	
+	public ObservableList<String> getKeywordSuggest(String str) {
+		if (str == null || str.isEmpty() || str.isBlank()) return null;
+		ObservableList<String> out = FXCollections.observableArrayList();
+		try {
+			ResultSet rs = con.createStatement().executeQuery("SELECT DISTINCT keyword FROM "+keywordsTable+" WHERE keyword LIKE \'" +str+"%\'");
+			while (rs.next()) out.add(rs.getString("keyword"));
+		} catch (SQLException e) {
+			System.err.println("Failed to select keywords for suggest for string \'"+str+"\'");
+			e.printStackTrace();
+			return null;
+		}
+		return out;
+	}
+	
 	@SuppressWarnings("unused")
 	public void tryAutoFillKeywords() {
 		if (true) return; //dont want this function to run accidentally

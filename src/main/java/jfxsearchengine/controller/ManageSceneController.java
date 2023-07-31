@@ -148,6 +148,10 @@ public class ManageSceneController implements Initializable {
 			notifyError(true, "Invalid keywords format");
 			return;
 		}
+		if (!urlTxtBx.getText().matches("^https?:\\/\\/([^\\-\\.][a-zA-Z0-9\\-]+[^\\-]\\.)+[A-Za-z]+(\\/[a-zA-Z0-9_\\-.!~*'|(),;:@&=+$%]*)*$")) {
+			notifyError(true, "Invalid url format");
+			return;
+		}
 		DbManager.getInstance().saveIndex(new Index(urlTxtBx.getText(), titleTxtBx.getText(), descTxtBx.getText(), keyTxtBx.getText().replaceAll(",", " ").split(" +")));
 		urlTxtBx.setText("");
 		titleTxtBx.setText("");

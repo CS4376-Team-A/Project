@@ -20,9 +20,3 @@ public class App extends Application{
         stage.show();
     }
 }
-
-/* TODO:
- * - URL verification
- * - autofill as typing
- * - try auto fill keywords in db
- */

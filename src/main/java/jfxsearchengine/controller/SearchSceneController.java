@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -19,6 +20,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.paint.Color;
+import javafx.stage.Popup;
 import jfxsearchengine.SceneManager;
 import jfxsearchengine.Scenes;
 import jfxsearchengine.db.DbManager;
@@ -35,9 +37,14 @@ public class SearchSceneController implements Initializable{
 	@FXML private TableColumn<Index, String> urlCol;
 	@FXML private TableColumn<Index, String> descCol;
 	@FXML private ComboBox<String> modeComboBx;
+	private Popup searchAutofillPopup;
+	private ListView<String> keywordsSuggestListView;
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		searchAutofillPopup = new Popup();
+		keywordsSuggestListView = new ListView<String>();
+		
 		searchTable.setEditable(false);
 		titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
 		urlCol.setCellValueFactory(new PropertyValueFactory<>("url"));
@@ -49,7 +56,38 @@ public class SearchSceneController implements Initializable{
 		modeComboBx.getItems().addAll("OR","AND","NOT");
 		modeComboBx.setValue("OR");
 		
+		searchAutofillPopup.setAutoHide(true);
+		searchAutofillPopup.getContent().add(keywordsSuggestListView);
+		
+		searchTxtBox.setOnKeyReleased(e -> {
+			if (searchTxtBox.getText()==null || searchTxtBox.getText().isEmpty() || searchTxtBox.getText().isBlank()) return;
+			String[] keywords = searchTxtBox.getText().trim().split("\\s+");
+			ObservableList<String> suggestedKeywords = DbManager.getInstance().getKeywordSuggest(keywords[keywords.length-1]);
+			suggestedKeywords.sort(String::compareTo);
+			if (!suggestedKeywords.isEmpty()) {
+				keywordsSuggestListView.getItems().setAll(suggestedKeywords);
+				if (!searchAutofillPopup.isShowing()) {
+					searchAutofillPopup.show(searchTxtBox, searchTxtBox.getScene().getWindow().getX()+searchTxtBox.getScene().getX()+searchTxtBox.getLayoutX(), 
+							searchTxtBox.getScene().getWindow().getY()+searchTxtBox.getScene().getY()+searchTxtBox.getLayoutY()+searchTxtBox.getHeight());
+				}
+			} else {
+				searchAutofillPopup.hide();
+			}
+		});
+		
+		keywordsSuggestListView.setOnMouseClicked(e -> {
+			String suggestedKeyword = keywordsSuggestListView.getSelectionModel().getSelectedItem();
+			String txt = searchTxtBox.getText().trim();
+			int pos = txt.lastIndexOf(' ');
+			if (pos < 0) {
+				searchTxtBox.setText(suggestedKeyword);
+			} else {
+				searchTxtBox.setText(txt.substring(0, pos)+" "+suggestedKeyword+" ");
+			}
+			searchTxtBox.positionCaret(searchTxtBox.getText().length());
+		});
 	}
+	
 	
 	public void gotoManageScene() {
 		SceneManager.getInstance().changeScene(Scenes.MANAGE);
