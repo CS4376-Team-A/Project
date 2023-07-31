@@ -91,11 +91,6 @@ public class SearchSceneController implements Initializable{
 	}
 	
 	public void doSearch() {
-		/*if (true) { //DO NOT UNCOMMENT THIS LOL
-			DbManager.getInstance().tryAutoFillKeywords();
-			System.out.println("DONE");
-			return;
-		}*/
 		if (searchTxtBox.getText().isBlank()) return;
 		ObservableList<Index> res = switch (modeComboBx.getValue())	{
 			case "AND" -> DbManager.getInstance().findByAllKeywords(searchTxtBox.getText().replaceAll(",", " ").split(" +"));
