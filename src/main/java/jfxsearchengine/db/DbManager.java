@@ -224,4 +224,24 @@ public class DbManager {
 		}
 	}
 	
+	public void tryAutoFillKeywords() {
+		try {
+			Statement sql = con.createStatement();
+			ResultSet rs = sql.executeQuery("SELECT id, title, description FROM indexes");
+			while (rs.next()) {
+				String title = rs.getString("title");
+				String desc = rs.getString("description");
+				int id = rs.getInt("id");
+				System.out.println(id);
+				for (String s : ((title==null||title.isBlank()?"":title) + (desc==null||desc.isBlank()?"":desc)).replaceAll("[^a-zA-Z0-9 ]", "").split(" +")) {
+					Statement sql2 = con.createStatement();
+					sql2.executeUpdate("INSERT INTO keywords (id, keyword) VALUES ("+id+",\'"+s+"\')");
+				}
+			}
+		} catch (SQLException e) {
+			System.err.println("Failed");
+			e.printStackTrace();
+		}
+	}
+	
 }
