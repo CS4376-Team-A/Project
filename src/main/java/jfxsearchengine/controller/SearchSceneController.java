@@ -111,6 +111,8 @@ public class SearchSceneController implements Initializable{
 		};
 		searchTable.setItems(res);
 		searchTable.refresh();
+		titleCol.setSortType(TableColumn.SortType.ASCENDING);
+		searchTable.getSortOrder().add(titleCol);
 	}
 	
 	public static class HyperlinkTableCell extends TableCell<Index, String> {

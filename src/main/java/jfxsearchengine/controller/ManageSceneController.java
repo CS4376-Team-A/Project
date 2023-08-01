@@ -140,6 +140,7 @@ public class ManageSceneController implements Initializable {
 	
 	public void refreshTable() {
 		indexTable.setItems(DbManager.getInstance().getAllIndexes());
+		indexTable.refresh();
 	}
 	
 	public void addIndex() {
